@@ -17,6 +17,7 @@ func (s userInfoService) Detail(ctx context.Context) (info entity.UserInfo, err 
 	}{}
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
+		SetResult(&res).
 		Post("/getUserInfo")
 	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return

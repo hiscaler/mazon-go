@@ -203,7 +203,7 @@ func recheckError(resp *resty.Response, result NormalResponse, e error) error {
 		return errorWrap(resp.StatusCode(), resp.Error().(string))
 	}
 
-	if result.Code != 200 {
+	if result.Code != http.StatusOK {
 		return errorWrap(result.Code, result.Message)
 	}
 	return nil
