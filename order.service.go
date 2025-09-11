@@ -179,26 +179,25 @@ func (m CancelOrderRequest) validate() error {
 // Cancel 取消订单
 // http://doc.areship.cn/api-68024502
 // 在订单草稿、已预报、已提交（未在预报执行中）状态时可以进行取消订单操作。
-func (s orderService) Cancel(ctx context.Context, req CancelOrderRequest) ([]string, error) {
+//
+// 返回值
+// 5：取消中、6：已取消
+func (s orderService) Cancel(ctx context.Context, req CancelOrderRequest) (int, error) {
 	if err := req.validate(); err != nil {
-		return nil, invalidInput(err)
+		return -1, invalidInput(err)
 	}
 
 	res := struct {
 		NormalResponse
-		Result []string `json:"result"`
+		Result int `json:"result"`
 	}{}
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetResult(&res).
 		Post("/cancelOrder")
-	if err != nil {
-		return nil, err
-	}
-
 	if err = recheckError(resp, res.NormalResponse, err); err != nil {
-		return nil, err
+		return -1, err
 	}
 	return res.Result, nil
 }
