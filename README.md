@@ -3,7 +3,7 @@
 
 ## 开发文档
 
-[doc.areship.cn](http://doc.areship.cn/)
+[https://www.mazonlabel.com/docs/](https://www.mazonlabel.com/docs/)
 
 ## 安装
 

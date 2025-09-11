@@ -15,6 +15,7 @@ type service struct {
 
 // API Services
 type services struct {
-	Order    orderService // 订单
-	UserInfo userInfoService
+	Order         orderService         // 订单
+	UserInfo      userInfoService      // 用户信息
+	ShippingLabel shippingLabelService // 面单
 }

@@ -74,8 +74,9 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		httpClient: areShipClient.httpClient,
 	}
 	areShipClient.Services = services{
-		Order:    (orderService)(xService),
-		UserInfo: (userInfoService)(xService),
+		Order:         (orderService)(xService),
+		UserInfo:      (userInfoService)(xService),
+		ShippingLabel: (shippingLabelService)(xService),
 	}
 	return areShipClient
 }

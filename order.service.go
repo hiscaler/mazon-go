@@ -9,34 +9,56 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+// 订单服务
 type orderService service
 
 type OrderBox struct {
-	Length       float64 `json:"box_length"`        // 长（支持两位小数）
-	Width        float64 `json:"box_width"`         // 宽（支持两位小数）
-	Height       float64 `json:"box_height"`        // 高（支持两位小数）
-	ActualWeight float64 `json:"box_actual_weight"` // 箱子重量（单位 kg，支持两位小数）
+	Length          float64 `json:"box_length"`        // 长（支持两位小数）
+	Width           float64 `json:"box_width"`         // 宽（支持两位小数）
+	Height          float64 `json:"box_height"`        // 高（支持两位小数）
+	ActualWeight    float64 `json:"box_actual_weight"` // 箱子重量（单位 kg，支持两位小数）
+	Sku             string  `json:"sku,omitempty"`
+	CnName          string  `json:"cn_name,omitempty"`           // 中文名称
+	EngName         string  `json:"eng_name,omitempty"`          // 英文名称
+	ApplyCompany    string  `json:"apply_company,omitempty"`     // 申报单位
+	ApplyNumber     int     `json:"apply_number,omitempty"`      // 申报数量
+	ApplyUnitPrice  float64 `json:"apply_unit_price,omitempty"`  // 申报价格
+	ApplyUnitWeight float64 `json:"apply_unit_weight,omitempty"` // 申报重量
+	GoodDetail      string  `json:"good_detail,omitempty"`       // 配货信息
+	CustomsCode     string  `json:"customs_code,omitempty"`      // 海关编码
+	SaleUrl         string  `json:"sale_url,omitempty"`          // 销售链接
+	CnMaterial      string  `json:"cn_material,omitempty"`       // 中文材质
+	EngMaterial     string  `json:"eng_material,omitempty"`      // 英文材质
+	ProduceCountry  string  `json:"produce_country,omitempty"`   // 生产国家
+	Remark          string  `json:"remark,omitempty"`            // 生产国家
 }
 
 type CreateOrderRequest struct {
-	ReferenceNO      string         `json:"reference_no"`       // 订单参考号，唯一
-	SMCode           string         `json:"sm_code"`            // 物流产品代码，请咨询您的销售代表获取
-	Remark           null.String    `json:"remark"`             // 订单备注
-	OAFirstname      string         `json:"oa_firstname"`       // 收件人姓名
-	OACompany        null.String    `json:"oa_company"`         // 收件人公司
-	OAStreetAddress1 string         `json:"oa_street_address1"` // 收件人地址 1
-	OAStreetAddress2 null.String    `json:"oa_street_address2"` // 收件人地址 2
-	OAPostcode       string         `json:"oa_postcode"`        // 收件人邮编
-	OAState          string         `json:"oa_state"`           // 收件人州/省
-	OACity           string         `json:"oa_city"`            // 收件人城市
-	OACountry        string         `json:"oa_country"`         // 收件人国家（国家二字码）
-	OATelephone      string         `json:"oa_telphone"`        // 收件人电话
-	IsMoreBox        int            `json:"is_more_box"`        // 包裹类型
-	SignatureService null.String    `json:"signature_service"`  // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
-	WeightUnitType   int            `json:"weight_unit_type"`   // 包裹单位类型（1-英制(INCH/LBS) 2-公制(CM/KG) 默认为2）
-	BoxList          []OrderBox     `json:"box_list"`           // 包裹信息
-	ShipperAddress   entity.Address `json:"shipper_address"`    // 发件人信息（发件人信息必须与我司备案信息完全一致）
-	ShipperCode      string         `json:"shipper_code"`       // 发件人编码（发件人信息与发件人编码同时存在时，以发件人信息为准）
+	ReferenceNO        string                `json:"reference_no"`                    // 订单参考号，唯一
+	SMCode             string                `json:"sm_code"`                         // 物流产品代码，请咨询您的销售代表获取
+	Remark             null.String           `json:"remark,omitempty"`                // 订单备注
+	OAFirstname        string                `json:"oa_firstname"`                    // 收件人姓名
+	OACompany          null.String           `json:"oa_company,omitempty"`            // 收件人公司
+	OAStreetAddress1   string                `json:"oa_street_address1,omitempty"`    // 收件人地址 1
+	OAStreetAddress2   null.String           `json:"oa_street_address2,omitempty"`    // 收件人地址 2
+	OAPostcode         string                `json:"oa_postcode"`                     // 收件人邮编
+	OAState            string                `json:"oa_state"`                        // 收件人州/省
+	OACity             string                `json:"oa_city"`                         // 收件人城市
+	OACountry          string                `json:"oa_country"`                      // 收件人国家（国家二字码）
+	OATelephone        string                `json:"oa_telphone"`                     // 收件人电话
+	IsMoreBox          int                   `json:"is_more_box"`                     // 包裹类型
+	SignatureService   null.String           `json:"signature_service,omitempty"`     // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
+	PickUp             int                   `json:"pick_up,omitempty"`               // 是否提货 1：是，0：否，不传默认为否, 传1（是）需要物流产品支持，物流产品不支持传1(是)也无效
+	WeightUnitType     int                   `json:"weight_unit_type,omitempty"`      // 包裹单位类型（1-英制(INCH/LBS) 2-公制(CM/KG) 默认为2）
+	LabelCustomType    string                `json:"label_custom_type,omitempty"`     // 自定义面单打印类型: 1为都打印 2为打印参考号 3为仅仅打印备注 默认为1
+	MailingDate        string                `json:"mailing_date,omitempty"`          // 发货日期 格式为yyyy-MM-dd
+	LabelImageFormat   string                `json:"label_image_format,omitempty"`    // 面单格式: PDF、ZPL(打印机格式) 默认为PDF
+	HasUpsLabelCropped string                `json:"has_ups_label_cropped,omitempty"` // UPS面单是否裁剪,true为裁剪,false为不裁剪 不传默认为true
+	GenerateGxEvent    string                `json:"generate_gx_event,omitempty"`     // 是否生成gx预报轨迹 不传默认为true
+	BoxList            []OrderBox            `json:"box_list"`                        // 包裹信息
+	ShipperAddress     entity.ShipperAddress `json:"shipper_address"`                 // 发件人信息（发件人信息必须与我司备案信息完全一致）
+	ShipperCode        string                `json:"shipper_code"`                    // 发件人编码（发件人信息与发件人编码同时存在时，以发件人信息为准）
+	ReturnAddress      *entity.ReturnAddress `json:"return_address"`                  // 退件地址信息
 }
 
 func (m CreateOrderRequest) Validate() error {
