@@ -14,6 +14,7 @@ type Address struct {
 	ShipperCompany       string `json:"shipper_company"`
 	ShipperAddress1      string `json:"shipper_address1"`
 	ShipperAddress2      string `json:"shipper_address2"`
+	ShipperCountry       string `json:"shipper_country"`
 	ShipperStateProvince string `json:"shipper_state_province"`
 	ShipperCity          string `json:"shipper_city"`
 	ShipperPostalCode    string `json:"shipper_postal_code"`

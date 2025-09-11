@@ -8,6 +8,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/stretchr/testify v1.4.0
+	gopkg.in/guregu/null.v4 v4.0.0
 )
 
 require (
