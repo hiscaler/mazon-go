@@ -1,6 +1,7 @@
 package areship
 
 import (
+	"context"
 	"encoding/json"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -74,7 +75,7 @@ type CreateOrderResult struct {
 }
 
 // Create creates an order
-func (s orderService) Create(req CreateOrderRequest) (createRes CreateOrderResult, err error) {
+func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (createRes CreateOrderResult, err error) {
 	if err = req.Validate(); err != nil {
 		return
 	}
@@ -84,6 +85,7 @@ func (s orderService) Create(req CreateOrderRequest) (createRes CreateOrderResul
 		Result CreateOrderResult `json:"result"`
 	}{}
 	resp, err := s.httpClient.R().
+		SetContext(ctx).
 		SetBody(req).
 		Post("/createOrder")
 	if err != nil {

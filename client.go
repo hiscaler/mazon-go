@@ -1,14 +1,20 @@
 package areship
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-resty/resty/v2"
 	"github.com/hiscaler/areship-go/config"
+	"github.com/hiscaler/areship-go/entity"
 )
 
 const (
@@ -22,31 +28,36 @@ const (
 	userAgent = "AreShip API Client-Golang/" + Version + " (https://github.com/hiscaler/areship-go)"
 )
 
-type AreShip struct {
+type Client struct {
 	config      *config.Config // 配置
 	httpClient  *resty.Client  // Resty Client
 	accessToken string         // AccessToken
 	Services    services       // API Services
 }
 
-func NewClient(config config.Config) *AreShip {
-	logger := log.New(os.Stdout, "[ AreShip ] ", log.LstdFlags|log.Llongfile)
-	areShipClient := &AreShip{
-		config: &config,
+func NewClient(ctx context.Context, cfg config.Config) *Client {
+	logger := log.New(os.Stdout, "[ Client ] ", log.LstdFlags|log.Llongfile)
+	areShipClient := &Client{
+		config: &cfg,
 	}
 	httpClient := resty.New().
-		SetDebug(areShipClient.config.Debug).
+		SetDebug(cfg.Debug).
 		SetBaseURL("http://www.areship.cn/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
 			"User-Agent":   userAgent,
 		})
-
-	httpClient.SetTimeout(time.Duration(config.Timeout) * time.Second).
+	if cfg.Debug {
+		httpClient.SetBaseURL("http://120.77.77.237")
+	}
+	httpClient.SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
 			if areShipClient.accessToken == "" {
-				areShipClient.getAccessToken()
+				err := areShipClient.getAccessToken(ctx)
+				if err != nil {
+					return err
+				}
 			}
 			client.SetAuthToken(areShipClient.accessToken)
 			return nil
@@ -58,12 +69,13 @@ func NewClient(config config.Config) *AreShip {
 	areShipClient.httpClient = httpClient
 
 	xService := service{
-		config:     &config,
+		config:     &cfg,
 		logger:     logger,
 		httpClient: areShipClient.httpClient,
 	}
 	areShipClient.Services = services{
-		Order: (orderService)(xService),
+		Order:    (orderService)(xService),
+		UserInfo: (userInfoService)(xService),
 	}
 	return areShipClient
 }
@@ -71,29 +83,21 @@ func NewClient(config config.Config) *AreShip {
 type NormalResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"msg"`
-}
-
-type tokenResult struct {
-	AccessToken string `json:"access_token"` // 授权 Token
-	UserInfo    struct {
-		UID           string `json:"u_id"`            // 用户 ID
-		UAccount      string `json:"u_account"`       // 用户账号
-		UCustomerCode string `json:"u_customer_code"` // 用户客户代码
-	} `json:"user_info"` // 用户信息
+	Result  any    `json:"result"`
 }
 
 // accessToken 获取 Access Token 值
-func (lx *AreShip) getAccessToken() (err error) {
-	if lx.accessToken != "" {
+func (c *Client) getAccessToken(ctx context.Context) (err error) {
+	if c.accessToken != "" {
 		return nil
 	}
 
 	result := struct {
 		NormalResponse
-		Result tokenResult `json:"result"`
+		Result *entity.Token `json:"result"`
 	}{}
 	httpClient := resty.New().
-		SetDebug(lx.config.Debug).
+		SetDebug(c.config.Debug).
 		SetBaseURL("http://www.areship.cn/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
@@ -101,25 +105,29 @@ func (lx *AreShip) getAccessToken() (err error) {
 			"User-Agent":   userAgent,
 		})
 
-	resp, err := httpClient.R().SetResult(&result).Post("/getToken")
-	if err != nil {
-		return
+	if c.config.Debug {
+		httpClient.SetBaseURL("http://120.77.77.237/api/svc")
 	}
 
-	if resp.IsSuccess() {
-		if result.Code == OK {
-			lx.accessToken = result.Result.AccessToken
-			return nil
-		}
-		err = ErrorWrap(result.Code, result.Message)
-	} else {
-		err = fmt.Errorf("%s: %s", resp.Status(), string(resp.Body()))
+	resp, err := httpClient.R().
+		SetContext(ctx).
+		SetBody(map[string]string{
+			"app_key":   c.config.AppKey,
+			"app_token": c.config.AppToken,
+		}).
+		SetResult(&result).
+		Post("/getToken")
+	if err = recheckError(resp, result.NormalResponse, err); err != nil {
+		return
+	}
+	if result.Result != nil {
+		c.accessToken = result.Result.AccessToken
 	}
 	return
 }
 
-// ErrorWrap 错误包装
-func ErrorWrap(code int, message string) error {
+// errorWrap 错误包装
+func errorWrap(code int, message string) error {
 	if code == OK || code == 0 {
 		return nil
 	}
@@ -130,7 +138,7 @@ func ErrorWrap(code int, message string) error {
 	default:
 		if code == InternalError {
 			if message == "" {
-				message = "内部错误，请联系 AreShip 客服"
+				message = "内部错误，请联系 Client 客服"
 			}
 		} else {
 			message = strings.TrimSpace(message)
@@ -140,4 +148,63 @@ func ErrorWrap(code int, message string) error {
 		}
 	}
 	return fmt.Errorf("%d: %s", code, message)
+}
+
+func invalidInput(e error) error {
+	var errs validation.Errors
+	if !errors.As(e, &errs) {
+		return e
+	}
+
+	if len(errs) == 0 {
+		return nil
+	}
+
+	fields := make([]string, 0)
+	messages := make([]string, 0)
+	for field := range errs {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+
+	for _, field := range fields {
+		e1 := errs[field]
+		if e1 == nil {
+			continue
+		}
+
+		var errObj validation.ErrorObject
+		if errors.As(e1, &errObj) {
+			e1 = errObj
+		} else {
+			var errs1 validation.Errors
+			if errors.As(e1, &errs1) {
+				e1 = invalidInput(errs1)
+				if e1 == nil {
+					continue
+				}
+			}
+		}
+
+		messages = append(messages, e1.Error())
+	}
+	return errors.New(strings.Join(messages, "; "))
+}
+
+func recheckError(resp *resty.Response, result NormalResponse, e error) error {
+	if e != nil {
+		if errors.Is(e, http.ErrHandlerTimeout) {
+			return errorWrap(http.StatusRequestTimeout, e.Error())
+		}
+		return e
+	}
+
+	if resp.IsError() {
+		return errorWrap(resp.StatusCode(), resp.Error().(string))
+	}
+
+	if result.Code != 200 {
+		return errorWrap(result.Code, result.Message)
+	}
+	return nil
 }
