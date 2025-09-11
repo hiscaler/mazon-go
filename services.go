@@ -1,9 +1,10 @@
 package areship
 
 import (
+	"log"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hiscaler/areship-go/config"
-	"log"
 )
 
 type service struct {

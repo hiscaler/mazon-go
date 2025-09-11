@@ -2,6 +2,7 @@ package areship
 
 import (
 	"encoding/json"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 

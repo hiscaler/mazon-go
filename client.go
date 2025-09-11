@@ -2,12 +2,13 @@ package areship
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/hiscaler/areship-go/config"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/hiscaler/areship-go/config"
 )
 
 const (
@@ -81,9 +82,7 @@ type tokenResult struct {
 	} `json:"user_info"` // 用户信息
 }
 
-// accessToken 获取 Token 值
-// force 参数为 true 的情况下，会强制重新获取 token，为 false 的情况下根据已有的 token 数据是否过期而采取重新获取或者续期处理。
-// 当前通过测试发现领星对 token 的过期时间处理并不是很准确，故当前总是重新获取 token.
+// accessToken 获取 Access Token 值
 func (lx *AreShip) getAccessToken() (err error) {
 	if lx.accessToken != "" {
 		return nil
