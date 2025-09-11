@@ -2,7 +2,7 @@ package areship
 
 import (
 	"context"
-	"encoding/json"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hiscaler/areship-go/entity"
@@ -94,12 +94,89 @@ func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (creat
 		SetContext(ctx).
 		SetBody(req).
 		Post("/createOrder")
-	if err != nil {
+	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return
 	}
+	return res.Result, nil
+}
 
-	if err = json.Unmarshal(resp.Body(), &res); err == nil {
-		createRes = res.Result
+type OrderQueryRequest struct {
+	Type        int    `json:"type"`                   // 类型（1 代表按时间搜索、2 代表按票搜索）
+	OrderCode   string `json:"order_code,omitempty"`   // 订单号
+	ReferenceNo string `json:"reference_no,omitempty"` // 参考号
+	DateFrom    string `json:"date_from,omitempty"`    // 开始时间（格式：2023-06-01 00:00:00）
+	DateTo      string `json:"date_to,omitempty"`      // 结束时间（格式：2023-06-01 00:00:00）
+}
+
+func (m OrderQueryRequest) validate() error {
+	return validation.ValidateStruct(&m,
+		validation.Field(&m.Type, validation.In(1, 2).Error("类型参数错误")),
+		validation.Field(&m.DateFrom, validation.When(m.DateFrom != "", validation.Date(time.DateTime).Error("开始时间格式错误"))),
+		validation.Field(&m.DateTo, validation.When(m.DateTo != "", validation.Date(time.DateTime).Error("结束时间格式错误"))),
+	)
+}
+
+// Query 查询订单
+// http://doc.areship.cn/api-106489828
+func (s orderService) Query(ctx context.Context, req OrderQueryRequest) ([]entity.Order, error) {
+	if err := req.validate(); err != nil {
+		return nil, invalidInput(err)
 	}
-	return
+
+	res := struct {
+		NormalResponse
+		Result []entity.Order `json:"result"`
+	}{}
+	resp, err := s.httpClient.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&res).
+		Post("/getOrderInfo")
+	if err != nil {
+		return nil, err
+	}
+
+	if err = recheckError(resp, res.NormalResponse, err); err != nil {
+		return nil, err
+	}
+	return res.Result, nil
+}
+
+type CancelOrderRequest struct {
+	OrderCode   string `json:"order_code"`   // 订单号
+	ReferenceNo string `json:"reference_no"` // 参考号
+}
+
+func (m CancelOrderRequest) validate() error {
+	return validation.ValidateStruct(&m,
+		validation.Field(&m.OrderCode, validation.When(m.ReferenceNo == "", validation.Required.Error("订单号不能为空"))),
+		validation.Field(&m.ReferenceNo, validation.When(m.OrderCode == "", validation.Required.Error("参考号不能为空"))),
+	)
+}
+
+// Cancel 取消订单
+// http://doc.areship.cn/api-68024502
+// 在订单草稿、已预报、已提交（未在预报执行中）状态时可以进行取消订单操作。
+func (s orderService) Cancel(ctx context.Context, req CancelOrderRequest) ([]string, error) {
+	if err := req.validate(); err != nil {
+		return nil, invalidInput(err)
+	}
+
+	res := struct {
+		NormalResponse
+		Result []string `json:"result"`
+	}{}
+	resp, err := s.httpClient.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&res).
+		Post("/cancelOrder")
+	if err != nil {
+		return nil, err
+	}
+
+	if err = recheckError(resp, res.NormalResponse, err); err != nil {
+		return nil, err
+	}
+	return res.Result, nil
 }
