@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	OK                   = 200 // 无错误
-	ServiceNotFoundError = 400 // 服务不存在
-	InternalError        = 500 // 内部错误，数据库异常
+	OK              = 200 // 无错误
+	BadRequestError = 400 // 请求错误
+	InternalError   = 500 // 内部错误，数据库异常
 )
 
 const (
@@ -134,12 +134,10 @@ func errorWrap(code int, message string) error {
 	}
 
 	switch code {
-	case ServiceNotFoundError:
-		message = "服务不存在"
 	default:
 		if code == InternalError {
 			if message == "" {
-				message = "内部错误，请联系 Client 客服"
+				message = "内部错误，请联系美正客服"
 			}
 		} else {
 			message = strings.TrimSpace(message)
