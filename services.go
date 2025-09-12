@@ -1,10 +1,10 @@
-package areship
+package mazon
 
 import (
 	"log"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hiscaler/areship-go/config"
+	"github.com/hiscaler/mazon-go/config"
 )
 
 type service struct {
@@ -15,7 +15,7 @@ type service struct {
 
 // API Services
 type services struct {
-	Order         orderService         // 订单
-	UserInfo      userInfoService      // 用户信息
-	ShippingLabel shippingLabelService // 面单
+	Order         orderService         // 订单服务
+	User          userService          // 用户服务
+	ShippingLabel shippingLabelService // 面单服务
 }

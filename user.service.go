@@ -1,16 +1,16 @@
-package areship
+package mazon
 
 import (
 	"context"
 
-	"github.com/hiscaler/areship-go/entity"
+	"github.com/hiscaler/mazon-go/entity"
 )
 
 // 用户信息服务
-type userInfoService service
+type userService service
 
-// Detail 获取用户信息
-func (s userInfoService) Detail(ctx context.Context) (info entity.UserInfo, err error) {
+// Info 获取用户信息
+func (s userService) Info(ctx context.Context) (info entity.UserInfo, err error) {
 	res := struct {
 		NormalResponse
 		Result entity.UserInfo `json:"result"`

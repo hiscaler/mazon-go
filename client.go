@@ -1,4 +1,4 @@
-package areship
+package mazon
 
 import (
 	"context"
@@ -13,13 +13,14 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-resty/resty/v2"
-	"github.com/hiscaler/areship-go/config"
-	"github.com/hiscaler/areship-go/entity"
+	"github.com/hiscaler/mazon-go/config"
+	"github.com/hiscaler/mazon-go/entity"
 )
 
 const (
 	OK              = 200 // 无错误
 	BadRequestError = 400 // 请求错误
+	InvalidToken    = 401 // 无效的 Token
 	InternalError   = 500 // 内部错误，数据库异常
 )
 
@@ -37,7 +38,7 @@ type Client struct {
 
 func NewClient(ctx context.Context, cfg config.Config) *Client {
 	logger := log.New(os.Stdout, "[ Client ] ", log.LstdFlags|log.Llongfile)
-	areShipClient := &Client{
+	mazonClient := &Client{
 		config: &cfg,
 	}
 	httpClient := resty.New().
@@ -48,37 +49,34 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			"Accept":       "application/json",
 			"User-Agent":   userAgent,
 		})
-	if cfg.Debug {
-		httpClient.SetBaseURL("http://120.77.77.237")
-	}
 	httpClient.SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
-			if areShipClient.accessToken == "" {
-				err := areShipClient.getAccessToken(ctx)
+			if mazonClient.accessToken == "" {
+				err := mazonClient.getAccessToken(ctx)
 				if err != nil {
 					return err
 				}
 			}
-			client.SetAuthToken(areShipClient.accessToken)
+			client.SetHeader("Authorization", mazonClient.accessToken)
 			return nil
 		}).
 		SetRetryCount(2).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(10 * time.Second)
 
-	areShipClient.httpClient = httpClient
+	mazonClient.httpClient = httpClient
 
 	xService := service{
 		config:     &cfg,
 		logger:     logger,
-		httpClient: areShipClient.httpClient,
+		httpClient: mazonClient.httpClient,
 	}
-	areShipClient.Services = services{
+	mazonClient.Services = services{
 		Order:         (orderService)(xService),
-		UserInfo:      (userInfoService)(xService),
+		User:          (userService)(xService),
 		ShippingLabel: (shippingLabelService)(xService),
 	}
-	return areShipClient
+	return mazonClient
 }
 
 type NormalResponse struct {
@@ -99,17 +97,12 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 	}{}
 	httpClient := resty.New().
 		SetDebug(c.config.Debug).
-		SetBaseURL("http://www.areship.cn/api/svc").
+		SetBaseURL("https://www.mazonlabel.com/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
 			"User-Agent":   userAgent,
 		})
-
-	if c.config.Debug {
-		httpClient.SetBaseURL("http://120.77.77.237/api/svc")
-	}
-
 	resp, err := httpClient.R().
 		SetContext(ctx).
 		SetBody(map[string]string{
@@ -134,6 +127,8 @@ func errorWrap(code int, message string) error {
 	}
 
 	switch code {
+	case InvalidToken:
+		message = "无效的 Token"
 	default:
 		if code == InternalError {
 			if message == "" {

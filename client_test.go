@@ -1,4 +1,4 @@
-package areship
+package mazon
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hiscaler/areship-go/config"
+	"github.com/hiscaler/mazon-go/config"
 	"github.com/stretchr/testify/assert"
 )
 
