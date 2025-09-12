@@ -39,13 +39,13 @@ type CreateOrderRequest struct {
 	Remark             null.String           `json:"remark,omitempty"`                // 订单备注
 	OAFirstname        string                `json:"oa_firstname"`                    // 收件人姓名
 	OACompany          null.String           `json:"oa_company,omitempty"`            // 收件人公司
-	OAStreetAddress1   string                `json:"oa_street_address1,omitempty"`    // 收件人地址 1
-	OAStreetAddress2   null.String           `json:"oa_street_address2,omitempty"`    // 收件人地址 2
-	OAPostcode         string                `json:"oa_postcode"`                     // 收件人邮编
+	OATelephone        string                `json:"oa_telphone"`                     // 收件人电话
+	OACountry          string                `json:"oa_country"`                      // 收件人国家（国家二字码）
 	OAState            string                `json:"oa_state"`                        // 收件人州/省
 	OACity             string                `json:"oa_city"`                         // 收件人城市
-	OACountry          string                `json:"oa_country"`                      // 收件人国家（国家二字码）
-	OATelephone        string                `json:"oa_telphone"`                     // 收件人电话
+	OAPostcode         string                `json:"oa_postcode"`                     // 收件人邮编
+	OAStreetAddress1   string                `json:"oa_street_address1,omitempty"`    // 收件人地址 1
+	OAStreetAddress2   null.String           `json:"oa_street_address2,omitempty"`    // 收件人地址 2
 	IsMoreBox          int                   `json:"is_more_box"`                     // 包裹类型
 	SignatureService   null.String           `json:"signature_service,omitempty"`     // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
 	PickUp             int                   `json:"pick_up,omitempty"`               // 是否提货 1：是，0：否，不传默认为否, 传1（是）需要物流产品支持，物流产品不支持传1(是)也无效
@@ -115,6 +115,7 @@ func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (creat
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(req).
+		SetResult(&res).
 		Post("/createOrder")
 	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return
