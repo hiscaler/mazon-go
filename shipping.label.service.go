@@ -2,6 +2,8 @@ package areship
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hiscaler/areship-go/entity"
@@ -38,10 +40,35 @@ func (s shippingLabelService) Detail(ctx context.Context, req ShippingLabelDetai
 		SetBody(req).
 		SetResult(&res).
 		Post("/getLabel")
-	if err != nil {
+	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return label, err
 	}
+	return res.Result, nil
+}
 
+// DetailByTrackingNumber 根据物流单号获取面单信息
+// https://www.mazonlabel.com/docs/orderapi/%E6%A0%B9%E6%8D%AE%E7%89%A9%E6%B5%81%E5%8D%95%E5%8F%B7%E8%8E%B7%E5%8F%96%E9%9D%A2%E5%8D%95%E4%BF%A1%E6%81%AF.html
+func (s shippingLabelService) DetailByTrackingNumber(ctx context.Context, trackingNumbers ...string) (label entity.LogisticsLabel, err error) {
+	numbers := make([]string, 0, len(trackingNumbers))
+	for _, number := range trackingNumbers {
+		number = strings.TrimSpace(number)
+		if number != "" {
+			numbers = append(numbers, number)
+		}
+	}
+	if len(numbers) == 0 {
+		return label, errors.New("无效的跟踪号")
+	}
+
+	res := struct {
+		NormalResponse
+		Result entity.LogisticsLabel `json:"result"`
+	}{}
+	resp, err := s.httpClient.R().
+		SetContext(ctx).
+		SetBody(map[string]string{"tracking_number": strings.Join(numbers, ",")}).
+		SetResult(&res).
+		Post("/getLabelInfo")
 	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return label, err
 	}
