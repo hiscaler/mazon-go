@@ -25,7 +25,7 @@ const (
 
 const (
 	Version   = "0.0.1"
-	userAgent = "AreShip API Client-Golang/" + Version + " (https://github.com/hiscaler/areship-go)"
+	userAgent = "Mazon API Client-Golang/" + Version + " (https://github.com/hiscaler/mazon-go)"
 )
 
 type Client struct {
@@ -42,7 +42,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 	}
 	httpClient := resty.New().
 		SetDebug(cfg.Debug).
-		SetBaseURL("http://www.areship.cn/api/svc").
+		SetBaseURL("https://www.mazonlabel.com/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
