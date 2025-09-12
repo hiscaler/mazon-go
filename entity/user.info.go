@@ -10,16 +10,16 @@ type UserInfo struct {
 
 // ShipperAddress 发件人信息, 发件人信息必须与我司备案信息完全一致, 发件人信息与发件人编码同时存在时，以发件人信息为准
 type ShipperAddress struct {
-	ShipperCode          string `json:"shipper_code"`
-	ShipperName          string `json:"shipper_name"`
-	ShipperCompany       string `json:"shipper_company,omitempty"`
-	ShipperAddress1      string `json:"shipper_address1"`
-	ShipperAddress2      string `json:"shipper_address2,omitempty"`
-	ShipperCountry       string `json:"shipper_country"`
-	ShipperStateProvince string `json:"shipper_state_province"`
-	ShipperCity          string `json:"shipper_city"`
-	ShipperPostalCode    string `json:"shipper_postal_code"`
-	ShipperTelPhone      string `json:"shipper_tel_phone"`
+	ShipperCode          string `json:"shipper_code"`               // 发件人编码, 发件人信息与发件人编码同时存在时，以发件人信息为准
+	ShipperName          string `json:"shipper_name"`               // 发件人姓名,长度最短3位数,最长35位数
+	ShipperCompany       string `json:"shipper_company,omitempty"`  // 发件人公司， 长度最长35位数
+	ShipperTelPhone      string `json:"shipper_tel_phone"`          // 发件人电话， 10-15位之间
+	ShipperCountry       string `json:"shipper_country"`            // 发件人国家， 要求固定值US
+	ShipperStateProvince string `json:"shipper_state_province"`     // 发件人州, 只能为大写二字编码
+	ShipperCity          string `json:"shipper_city"`               // 发件人城市, 长度最短1位数，最长30位数
+	ShipperPostalCode    string `json:"shipper_postal_code"`        // 发件人邮编, 长度最短5位数,最长10位数
+	ShipperAddress1      string `json:"shipper_address1"`           // 发件人地址1,长度不得超过35位
+	ShipperAddress2      string `json:"shipper_address2,omitempty"` // 发件人地址2,长度不得超过35位
 }
 
 // ReturnAddress 退件信息
