@@ -73,6 +73,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 	}
 	mazonClient.Services = services{
 		Order:         (orderService)(xService),
+		Rate:          (rateService)(xService),
 		User:          (userService)(xService),
 		ShippingLabel: (shippingLabelService)(xService),
 		ScanForm:      (scanFormService)(xService),
