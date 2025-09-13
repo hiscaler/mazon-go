@@ -5,7 +5,6 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hiscaler/mazon-go/entity"
-	"gopkg.in/guregu/null.v4"
 )
 
 // 运费服务
@@ -16,6 +15,31 @@ type RateCalcOrderBox struct {
 	Width        float64 `json:"box_width"`         // 宽（支持两位小数）
 	Height       float64 `json:"box_height"`        // 高（支持两位小数）
 	ActualWeight float64 `json:"box_actual_weight"` // 箱子重量（单位 kg，支持两位小数）
+}
+
+func (m RateCalcOrderBox) Validate() error {
+	return validation.ValidateStruct(&m,
+		validation.Field(&m.Length,
+			validation.Required.Error("长不能为空"),
+			validation.Min(0.01).Error("长不能小于 {.min}"),
+			validation.Max(999999.99).Error("长不能大于 {.max}"),
+		),
+		validation.Field(&m.Width,
+			validation.Required.Error("宽不能为空"),
+			validation.Min(0.01).Error("宽不能小于 {.min}"),
+			validation.Max(999999.99).Error("宽不能大于 {.max}"),
+		),
+		validation.Field(&m.Height,
+			validation.Required.Error("高不能为空"),
+			validation.Min(0.01).Error("高不能小于 {.min}"),
+			validation.Max(999999.99).Error("高不能大于 {.max}"),
+		),
+		validation.Field(&m.ActualWeight,
+			validation.Required.Error("重量不能为空"),
+			validation.Min(0.01).Error("重量不能小于 {.min}"),
+			validation.Max(999999.99).Error("重量不能大于 {.max}"),
+		),
+	)
 }
 
 type RateCalcRequest struct {
@@ -30,9 +54,9 @@ type RateCalcRequest struct {
 	OACity           string                 `json:"oa_city"`                      // 收件人城市
 	OAPostcode       string                 `json:"oa_postcode"`                  // 收件人邮编
 	OAStreetAddress1 string                 `json:"oa_street_address1,omitempty"` // 收件人地址 1
-	OAStreetAddress2 null.String            `json:"oa_street_address2,omitempty"` // 收件人地址 2
+	OAStreetAddress2 string                 `json:"oa_street_address2,omitempty"` // 收件人地址 2
 	IsMoreBox        int                    `json:"is_more_box"`                  // 包裹类型
-	SignatureService null.String            `json:"signature_service,omitempty"`  // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
+	SignatureService string                 `json:"signature_service,omitempty"`  // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
 	PickUp           int                    `json:"pick_up,omitempty"`            // 是否提货 1：是，0：否，不传默认为否, 传1（是）需要物流产品支持，物流产品不支持传1(是)也无效
 	WeightUnitType   int                    `json:"weight_unit_type,omitempty"`   // 包裹单位类型（1-英制(INCH/LBS) 2-公制(CM/KG) 默认为2）
 	BoxList          []RateCalcOrderBox     `json:"box_list"`                     // 包裹信息
@@ -58,7 +82,7 @@ func (m RateCalcRequest) Validate() error {
 			validation.Length(1, 35).Error("收件人地址1长度不能超过 {.max} 个字符"),
 		),
 		validation.Field(&m.OAStreetAddress2,
-			validation.When(m.OAStreetAddress2.Valid, validation.Length(1, 35).Error("收件人地址2长度不能超过 {.max} 个字符")),
+			validation.When(m.OAStreetAddress2 != "", validation.Length(1, 35).Error("收件人地址2长度不能超过 {.max} 个字符")),
 		),
 		validation.Field(&m.OAPostcode, validation.Required.Error("收件人邮编不能为空")),
 		validation.Field(&m.OAState, validation.Required.Error("收件人州不能为空")),
@@ -69,11 +93,13 @@ func (m RateCalcRequest) Validate() error {
 			validation.Length(10, 15).Error("收件人电话长度必须在 {.min} ~ {.max} 个字符"),
 		),
 		validation.Field(&m.SignatureService,
-			validation.When(m.SignatureService.Valid, validation.In("ASS", "SSF").Error("签名服务参数错误")),
+			validation.When(m.SignatureService != "", validation.In("ASS", "SSF").Error("签名服务参数错误")),
 		),
 		validation.Field(&m.WeightUnitType,
 			validation.In(1, 2).Error("包裹单位类型参数错误")),
-		validation.Field(&m.BoxList, validation.Required.Error("包裹信息不能为空")),
+		validation.Field(&m.BoxList,
+			validation.Required.Error("包裹信息不能为空"),
+		),
 		validation.Field(&m.ShipperAddress, validation.When(m.ShipperCode == "", validation.Required.Error("发件人信息和编码必须填写一个"))),
 		validation.Field(&m.ShipperCode, validation.When(m.ShipperAddress == nil, validation.Required.Error("发件人信息和编码必须填写一个"))),
 	)
