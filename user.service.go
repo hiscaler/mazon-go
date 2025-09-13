@@ -9,8 +9,8 @@ import (
 // 用户信息服务
 type userService service
 
-// Info 获取用户信息
-func (s userService) Info(ctx context.Context) (info entity.UserInfo, err error) {
+// Information 获取用户信息
+func (s userService) Information(ctx context.Context) (info entity.UserInfo, err error) {
 	res := struct {
 		NormalResponse
 		Result entity.UserInfo `json:"result"`
