@@ -10,7 +10,7 @@ import (
 
 type scanFormService service
 
-// Create 基于多个跟踪号生成ScanForm单据， 跟踪号必须同一个发货地址才可生成
+// Create 基于多个跟踪号生成 ScanForm， 跟踪号必须同一个发货地址才可生成
 // https://www.mazonlabel.com/docs/orderapi/%E7%94%9F%E6%88%90ScanForm%E5%8D%95%E6%8D%AE.html
 func (s scanFormService) Create(ctx context.Context, trackingNumbers ...string) (forms []entity.ScanForm, err error) {
 	numbers := make([]string, 0, len(trackingNumbers))
