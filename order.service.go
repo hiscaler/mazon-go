@@ -6,18 +6,17 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hiscaler/mazon-go/entity"
-	"gopkg.in/guregu/null.v4"
 )
 
 // 订单服务
 type orderService service
 
 type OrderBox struct {
-	Length          float64 `json:"box_length"`        // 长（支持两位小数）
-	Width           float64 `json:"box_width"`         // 宽（支持两位小数）
-	Height          float64 `json:"box_height"`        // 高（支持两位小数）
-	ActualWeight    float64 `json:"box_actual_weight"` // 箱子重量（单位 kg，支持两位小数）
-	Sku             string  `json:"sku,omitempty"`
+	Length          float64 `json:"box_length"`                  // 长（支持两位小数）
+	Width           float64 `json:"box_width"`                   // 宽（支持两位小数）
+	Height          float64 `json:"box_height"`                  // 高（支持两位小数）
+	ActualWeight    float64 `json:"box_actual_weight"`           // 箱子重量（单位 kg，支持两位小数）
+	Sku             string  `json:"sku,omitempty"`               // SKU
 	CnName          string  `json:"cn_name,omitempty"`           // 中文名称
 	EngName         string  `json:"eng_name,omitempty"`          // 英文名称
 	ApplyCompany    string  `json:"apply_company,omitempty"`     // 申报单位
@@ -33,6 +32,45 @@ type OrderBox struct {
 	Remark          string  `json:"remark,omitempty"`            // 生产国家
 }
 
+func (m OrderBox) Validate() error {
+	return validation.ValidateStruct(&m,
+		validation.Field(&m.Length,
+			validation.Required.Error("长不能为空"),
+			validation.Min(0.01).Error("长不能小于 {.min}"),
+			validation.Max(999999.99).Error("长不能大于 {.max}"),
+		),
+		validation.Field(&m.Width,
+			validation.Required.Error("宽不能为空"),
+			validation.Min(0.01).Error("宽不能小于 {.min}"),
+			validation.Max(999999.99).Error("宽不能大于 {.max}"),
+		),
+		validation.Field(&m.Height,
+			validation.Required.Error("高不能为空"),
+			validation.Min(0.01).Error("高不能小于 {.min}"),
+			validation.Max(999999.99).Error("高不能大于 {.max}"),
+		),
+		validation.Field(&m.ActualWeight,
+			validation.Required.Error("重量不能为空"),
+			validation.Min(0.01).Error("重量不能小于 {.min}"),
+			validation.Max(999999.99).Error("重量不能大于 {.max}"),
+		),
+		validation.Field(&m.Sku, validation.When(m.Sku != "", validation.Length(1, 35).Error("SKU 不能超过 {.max} 个字符"))),
+		validation.Field(&m.CnName, validation.When(m.CnName != "", validation.Length(1, 35).Error("中文名称不能超过 {.max} 个字符"))),
+		validation.Field(&m.EngName, validation.When(m.EngName != "", validation.Length(1, 35).Error("英文名称不能超过 {.max} 个字符"))),
+		validation.Field(&m.ApplyCompany, validation.When(m.ApplyCompany != "", validation.Length(1, 35).Error("申报单位不能超过 {.max} 个字符"))),
+		validation.Field(&m.ApplyNumber, validation.When(m.ApplyNumber > 0, validation.Min(1).Error("申报数量不能小于 {.min}"))),
+		validation.Field(&m.ApplyUnitPrice, validation.When(m.ApplyUnitPrice > 0, validation.Min(0.01).Error("申报价格不能小于 {.min}"))),
+		validation.Field(&m.ApplyUnitWeight, validation.When(m.ApplyUnitWeight > 0, validation.Min(0.01).Error("申报重量不能小于 {.min}"))),
+		validation.Field(&m.GoodDetail, validation.When(m.GoodDetail != "", validation.Length(1, 35).Error("配货信息不能超过 {.max} 个字符"))),
+		validation.Field(&m.CustomsCode, validation.When(m.CustomsCode != "", validation.Length(1, 35).Error("海关编码不能超过 {.max} 个字符"))),
+		validation.Field(&m.SaleUrl, validation.When(m.SaleUrl != "", validation.Length(1, 35).Error("销售链接不能超过 {.max} 个字符"))),
+		validation.Field(&m.CnMaterial, validation.When(m.CnMaterial != "", validation.Length(1, 35).Error("中文材质不能超过 {.max} 个字符"))),
+		validation.Field(&m.EngMaterial, validation.When(m.EngMaterial != "", validation.Length(1, 35).Error("英文材质不能超过 {.max} 个字符"))),
+		validation.Field(&m.ProduceCountry, validation.When(m.ProduceCountry != "", validation.Length(1, 35).Error("生产国家不能超过 {.max} 个字符"))),
+		validation.Field(&m.Remark, validation.When(m.Remark != "", validation.Length(1, 35).Error("生产国家不能超过 {.max} 个字符"))),
+	)
+}
+
 type CreateOrderRequest struct {
 	ReferenceNO        string                 `json:"reference_no"`                    // 订单参考号，唯一
 	SMCode             string                 `json:"sm_code"`                         // 物流产品代码，请咨询您的销售代表获取
@@ -45,9 +83,9 @@ type CreateOrderRequest struct {
 	OACity             string                 `json:"oa_city"`                         // 收件人城市
 	OAPostcode         string                 `json:"oa_postcode"`                     // 收件人邮编
 	OAStreetAddress1   string                 `json:"oa_street_address1,omitempty"`    // 收件人地址 1
-	OAStreetAddress2   null.String            `json:"oa_street_address2,omitempty"`    // 收件人地址 2
+	OAStreetAddress2   string                 `json:"oa_street_address2,omitempty"`    // 收件人地址 2
 	IsMoreBox          int                    `json:"is_more_box"`                     // 包裹类型
-	SignatureService   null.String            `json:"signature_service,omitempty"`     // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
+	SignatureService   string                 `json:"signature_service,omitempty"`     // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
 	PickUp             int                    `json:"pick_up,omitempty"`               // 是否提货 1：是，0：否，不传默认为否, 传1（是）需要物流产品支持，物流产品不支持传1(是)也无效
 	WeightUnitType     int                    `json:"weight_unit_type,omitempty"`      // 包裹单位类型（1-英制(INCH/LBS) 2-公制(CM/KG) 默认为2）
 	LabelCustomType    string                 `json:"label_custom_type,omitempty"`     // 自定义面单打印类型: 1为都打印 2为打印参考号 3为仅仅打印备注 默认为1
@@ -79,7 +117,7 @@ func (m CreateOrderRequest) Validate() error {
 			validation.Length(1, 35).Error("收件人地址1长度不能超过 {.max} 个字符"),
 		),
 		validation.Field(&m.OAStreetAddress2,
-			validation.When(m.OAStreetAddress2.Valid, validation.Length(1, 35).Error("收件人地址2长度不能超过 {.max} 个字符")),
+			validation.When(m.OAStreetAddress2 != "", validation.Length(1, 35).Error("收件人地址2长度不能超过 {.max} 个字符")),
 		),
 		validation.Field(&m.OAPostcode, validation.Required.Error("收件人邮编不能为空")),
 		validation.Field(&m.OAState, validation.Required.Error("收件人州不能为空")),
@@ -90,10 +128,9 @@ func (m CreateOrderRequest) Validate() error {
 			validation.Length(10, 15).Error("收件人电话长度必须在 {.min} ~ {.max} 个字符"),
 		),
 		validation.Field(&m.SignatureService,
-			validation.When(m.SignatureService.Valid, validation.In("ASS", "SSF").Error("签名服务参数错误")),
+			validation.When(m.SignatureService != "", validation.In("ASS", "SSF").Error("签名服务参数错误")),
 		),
-		validation.Field(&m.WeightUnitType,
-			validation.In(1, 2).Error("包裹单位类型参数错误")),
+		validation.Field(&m.WeightUnitType, validation.In(1, 2).Error("包裹单位类型参数错误")),
 		validation.Field(&m.BoxList, validation.Required.Error("包裹信息不能为空")),
 		validation.Field(&m.ShipperAddress, validation.When(m.ShipperCode == "", validation.Required.Error("发件人信息和编码必须填写一个"))),
 		validation.Field(&m.ShipperCode, validation.When(m.ShipperAddress == nil, validation.Required.Error("发件人信息和编码必须填写一个"))),
