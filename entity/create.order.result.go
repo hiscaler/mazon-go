@@ -1,6 +1,6 @@
 package entity
 
-type CreateOrderResult struct {
+type OrderCreateResult struct {
 	OrderCode  string      `json:"order_code"`  // 订单号，后续的操作需要以此订单为依据条件
 	Fee        []Fee       `json:"fee"`         // 费用信息
 	FeeDetail  []FeeDetail `json:"fee_detail"`  // 费用详情

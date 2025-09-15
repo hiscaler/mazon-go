@@ -139,7 +139,7 @@ func (m CreateOrderRequest) Validate() error {
 
 // Create 创建订单
 // https://www.mazonlabel.com/docs/orderapi/%E5%88%9B%E5%BB%BA%E8%AE%A2%E5%8D%95.html
-func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (createRes entity.CreateOrderResult, err error) {
+func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (createRes entity.OrderCreateResult, err error) {
 	if err = req.Validate(); err != nil {
 		err = invalidInput(err)
 		return
@@ -147,7 +147,7 @@ func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (creat
 
 	res := struct {
 		NormalResponse
-		Result entity.CreateOrderResult `json:"result"`
+		Result entity.OrderCreateResult `json:"result"`
 	}{}
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
