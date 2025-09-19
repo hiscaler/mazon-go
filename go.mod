@@ -1,8 +1,6 @@
 module github.com/hiscaler/mazon-go
 
-go 1.24.0
-
-toolchain go1.24.7
+go 1.23.0
 
 require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -14,6 +12,6 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

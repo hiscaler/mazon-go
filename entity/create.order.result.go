@@ -5,5 +5,5 @@ type OrderCreateResult struct {
 	Fee        []Fee       `json:"fee"`         // 费用信息
 	FeeDetail  []FeeDetail `json:"fee_detail"`  // 费用详情
 	Labels     []Label     `json:"labels"`      // 为空时代表没有生产物流信息，需要异步获取
-	MergeLabel string      `json:"merge_label"` //合并面单
+	MergeLabel string      `json:"merge_label"` // 合并面单
 }

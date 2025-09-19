@@ -8,6 +8,8 @@ import (
 	"github.com/hiscaler/mazon-go/entity"
 )
 
+var ErrInvalidTrackingNumber = errors.New("无效的跟踪号")
+
 type scanFormService service
 
 // Create 基于多个跟踪号生成 ScanForm， 跟踪号必须同一个发货地址才可生成
@@ -21,7 +23,7 @@ func (s scanFormService) Create(ctx context.Context, trackingNumbers ...string) 
 		}
 	}
 	if len(numbers) == 0 {
-		return forms, errors.New("无效的跟踪号")
+		return forms, ErrInvalidTrackingNumber
 	}
 
 	res := struct {
