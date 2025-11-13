@@ -2,9 +2,11 @@ package mazon
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"sort"
@@ -48,8 +50,14 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
 			"User-Agent":   userAgent,
-		})
-	httpClient.SetTimeout(time.Duration(cfg.Timeout) * time.Second).
+		}).
+		SetTransport(&http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DialContext: (&net.Dialer{
+				Timeout: 10 * time.Second,
+			}).DialContext,
+		}).
+		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
 			if mazonClient.accessToken == "" {
 				err := mazonClient.getAccessToken(ctx)
@@ -104,6 +112,12 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
 			"User-Agent":   userAgent,
+		}).
+		SetTransport(&http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DialContext: (&net.Dialer{
+				Timeout: 10 * time.Second,
+			}).DialContext,
 		})
 	resp, err := httpClient.R().
 		SetContext(ctx).
