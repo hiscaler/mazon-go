@@ -2,13 +2,17 @@ package mazon
 
 import (
 	"context"
+	"crypto/md5"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -60,9 +64,33 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
 			if mazonClient.accessToken == "" {
-				err := mazonClient.getAccessToken(ctx)
-				if err != nil {
-					return err
+				refreshAccessToken := true
+				var filename string
+				h := md5.New()
+				_, err := io.WriteString(h, fmt.Sprintf("speedex.access.token.%s.%s", cfg.AppKey, cfg.AppToken))
+				if err == nil {
+					filename = path.Join(os.TempDir(), fmt.Sprintf("%x", h.Sum(nil)))
+					var finfo fs.FileInfo
+					// AccessToken 实际过期时间为 12 小时，当前 10 个小时算过期，会重新去获取 Token
+					if finfo, err = os.Stat(filename); !os.IsNotExist(err) && !finfo.IsDir() && finfo.ModTime().Add(10*time.Hour).After(time.Now()) {
+						var b []byte
+						if b, err = os.ReadFile(filename); err == nil {
+							refreshAccessToken = false
+							mazonClient.accessToken = string(b)
+						}
+					}
+				}
+				if refreshAccessToken {
+					err = mazonClient.getAccessToken(ctx)
+					if err != nil {
+						return err
+					}
+					if filename != "" {
+						err = os.WriteFile(filename, []byte(mazonClient.accessToken), 0644)
+						if err != nil {
+							logger.Println("[ Error ]", err)
+						}
+					}
 				}
 			}
 			client.SetHeader("Authorization", mazonClient.accessToken)
