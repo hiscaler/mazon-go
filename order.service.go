@@ -2,6 +2,7 @@ package mazon
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -156,6 +157,9 @@ func (s orderService) Create(ctx context.Context, req CreateOrderRequest) (creat
 		Post("/createOrder")
 	if err = recheckError(resp, res.NormalResponse, err); err != nil {
 		return
+	}
+	if res.Result.LabelStatus == 0 {
+		return createRes, errors.New(res.Message)
 	}
 	return res.Result, nil
 }
