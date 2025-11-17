@@ -67,7 +67,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 				refreshAccessToken := true
 				var filename string
 				h := md5.New()
-				_, err := io.WriteString(h, fmt.Sprintf("speedex.access.token.%s.%s", cfg.AppKey, cfg.AppToken))
+				_, err := io.WriteString(h, fmt.Sprintf("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken))
 				if err == nil {
 					filename = path.Join(os.TempDir(), fmt.Sprintf("%x", h.Sum(nil)))
 					var finfo fs.FileInfo
