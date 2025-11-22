@@ -85,7 +85,7 @@ type CreateOrderRequest struct {
 	OAPostcode         string                 `json:"oa_postcode"`                     // 收件人邮编
 	OAStreetAddress1   string                 `json:"oa_street_address1,omitempty"`    // 收件人地址 1
 	OAStreetAddress2   string                 `json:"oa_street_address2,omitempty"`    // 收件人地址 2
-	IsMoreBox          int                    `json:"is_more_box"`                     // 包裹类型
+	IsMoreBox          int                    `json:"is_more_box"`                     // 包裹类型: 固定值，请传 1
 	SignatureService   string                 `json:"signature_service,omitempty"`     // 签名服务（是否需要签名服务：ASS为 成人签名 ，SSF为 普通签名，不需要可以不传该字段）
 	PickUp             int                    `json:"pick_up,omitempty"`               // 是否提货 1：是，0：否，不传默认为否, 传1（是）需要物流产品支持，物流产品不支持传1(是)也无效
 	WeightUnitType     int                    `json:"weight_unit_type,omitempty"`      // 包裹单位类型（1-英制(INCH/LBS) 2-公制(CM/KG) 默认为2）
