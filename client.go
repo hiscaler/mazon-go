@@ -2,23 +2,20 @@ package mazon
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
-	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"sort"
 	"strings"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-resty/resty/v2"
+	"github.com/hiscaler/aar"
 	"github.com/hiscaler/mazon-go/config"
 	"github.com/hiscaler/mazon-go/entity"
 )
@@ -63,37 +60,24 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		}).
 		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
-			if mazonClient.accessToken == "" {
-				refreshAccessToken := true
-				var filename string
-				h := md5.New()
-				_, err := io.WriteString(h, fmt.Sprintf("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken))
+			token := mazonClient.accessToken
+			if token == "" {
+				ar, err := aar.New("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken)
 				if err == nil {
-					filename = path.Join(os.TempDir(), fmt.Sprintf("%x", h.Sum(nil)))
-					var finfo fs.FileInfo
-					// AccessToken 实际过期时间为 12 小时，当前 10 个小时算过期，会重新去获取 Token
-					if finfo, err = os.Stat(filename); !os.IsNotExist(err) && !finfo.IsDir() && finfo.ModTime().Add(10*time.Hour).After(time.Now()) {
-						var b []byte
-						if b, err = os.ReadFile(filename); err == nil {
-							refreshAccessToken = false
-							mazonClient.accessToken = string(b)
-						}
-					}
+					token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 10)) * time.Hour).Read()
 				}
-				if refreshAccessToken {
-					err = mazonClient.getAccessToken(ctx)
-					if err != nil {
+				if token == "" {
+					// 重新获取 Token
+					if err = mazonClient.getAccessToken(ctx); err != nil {
 						return err
 					}
-					if filename != "" {
-						err = os.WriteFile(filename, []byte(mazonClient.accessToken), 0644)
-						if err != nil {
-							logger.Println("[ Error ]", err)
-						}
+					token = mazonClient.accessToken
+					if err = ar.Write([]byte(token)); err != nil {
+						logger.Println("[ Error ]", err)
 					}
 				}
 			}
-			client.SetHeader("Authorization", mazonClient.accessToken)
+			client.SetHeader("Authorization", token)
 			return nil
 		}).
 		SetRetryCount(2).
