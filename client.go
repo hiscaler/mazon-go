@@ -50,7 +50,6 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
-			"User-Agent":   userAgent,
 		}).
 		SetTransport(&http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -123,7 +122,6 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
-			"User-Agent":   userAgent,
 		}).
 		SetTransport(&http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
