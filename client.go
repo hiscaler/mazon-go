@@ -49,7 +49,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 	}
 	httpClient := resty.New().
 		SetDebug(cfg.Debug).
-		SetBaseURL("https://www.mazonlabel.com/api/svc").
+		SetBaseURL("https://api.mazonlabel.com/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
