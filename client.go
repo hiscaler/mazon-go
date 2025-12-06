@@ -30,6 +30,7 @@ const (
 const (
 	Version   = "0.0.1"
 	userAgent = "Mazon API Client-Golang/" + Version + " (https://github.com/hiscaler/mazon-go)"
+	baseUrl   = "https://api.mazonlabel.com/api/svc" // 美正无测试地址
 )
 
 type Client struct {
@@ -46,7 +47,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 	}
 	httpClient := resty.New().
 		SetDebug(cfg.Debug).
-		SetBaseURL("https://api.mazonlabel.com/api/svc").
+		SetBaseURL(baseUrl).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
@@ -118,7 +119,7 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 	}{}
 	httpClient := resty.New().
 		SetDebug(c.config.Debug).
-		SetBaseURL("https://api.mazonlabel.com/api/svc").
+		SetBaseURL(baseUrl).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
