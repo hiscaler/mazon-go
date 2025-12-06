@@ -118,7 +118,7 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 	}{}
 	httpClient := resty.New().
 		SetDebug(c.config.Debug).
-		SetBaseURL("https://www.mazonlabel.com/api/svc").
+		SetBaseURL("https://api.mazonlabel.com/api/svc").
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
