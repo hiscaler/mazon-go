@@ -3,6 +3,7 @@ package mazon
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -37,6 +38,7 @@ type Client struct {
 	config      *config.Config // 配置
 	httpClient  *resty.Client  // Resty Client
 	accessToken string         // AccessToken
+	retry       bool           // 是否重新发起请求，如果是重新发起的，需要重新获取 token
 	Services    services       // API Services
 }
 
@@ -61,7 +63,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
 			token := mazonClient.accessToken
-			if token == "" {
+			if token == "" || mazonClient.retry {
 				ar, err := aar.New("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken)
 				if err == nil {
 					token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 10)) * time.Hour).Read()
@@ -81,9 +83,17 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			return nil
 		}).
 		SetRetryCount(2).
-		SetRetryWaitTime(5 * time.Second).
-		SetRetryMaxWaitTime(10 * time.Second)
-
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(10 * time.Second).
+		AddRetryCondition(func(response *resty.Response, err error) bool {
+			if response == nil {
+				return true
+			}
+			var r NormalResponse
+			retry := json.Unmarshal(response.Body(), &r) == nil && r.Code == InvalidToken
+			mazonClient.retry = retry
+			return retry
+		})
 	mazonClient.httpClient = httpClient
 
 	xService := service{
