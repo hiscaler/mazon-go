@@ -82,6 +82,35 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			client.SetHeader("Authorization", token)
 			return nil
 		}).
+		OnAfterResponse(func(client *resty.Client, response *resty.Response) error {
+			logger.Printf(`
+Header: %#v
+Raw Request: %#v
+Request: %#v
+Raw Response: %#v
+Response: %#v
+`,
+				response.Request.Header,
+				response.Request.RawRequest,
+				response.Request,
+				response.RawResponse,
+				response,
+			)
+			fmt.Printf(`
+Header: %#v
+Raw Request: %#v
+Request: %#v
+Raw Response: %#v
+Response: %#v
+`,
+				response.Request.Header,
+				response.Request.RawRequest,
+				response.Request,
+				response.RawResponse,
+				response,
+			)
+			return nil
+		}).
 		SetRetryCount(2).
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(10 * time.Second).
