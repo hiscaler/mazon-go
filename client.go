@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -157,7 +158,8 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 		Result *entity.Token `json:"result"`
 	}{}
 	httpClient := resty.New().
-		SetDebug(c.config.Debug).
+		SetDebug(true).
+		EnableTrace().
 		SetBaseURL(baseUrl).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
@@ -177,6 +179,18 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 		}).
 		SetResult(&result).
 		Post("/getToken")
+	if err != nil {
+		slog.Info("getAccessToken", "err", err)
+		if resp != nil {
+			slog.Info("getAccessToken",
+				"header", resp.Header(),
+				"request", resp.Request,
+				"request body", resp.Request.Body,
+				"response", resp,
+				"response body", string(resp.Body()),
+			)
+		}
+	}
 	if err = recheckError(resp, result.NormalResponse, err); err != nil {
 		return
 	}
