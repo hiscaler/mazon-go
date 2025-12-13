@@ -31,7 +31,7 @@ const (
 
 const (
 	Version   = "0.0.1"
-	userAgent = "Mazon API Client-Golang/" + Version + " (https://github.com/hiscaler/mazon-go)"
+	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
 	baseUrl   = "https://api.mazonlabel.com/api/svc" // 美正无测试地址
 )
 
@@ -54,6 +54,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
+			"User-Agent":   userAgent,
 		}).
 		SetTransport(&http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -164,6 +165,7 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
+			"User-Agent":   userAgent,
 		}).
 		SetTransport(&http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -172,7 +174,7 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 			}).DialContext,
 		})
 	resp, err := httpClient.R().
-		SetContext(ctx).
+		SetContext(context.Background()).
 		SetBody(map[string]string{
 			"app_key":   c.config.AppKey,
 			"app_token": c.config.AppToken,
