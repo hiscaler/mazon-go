@@ -68,9 +68,9 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			if token == "" || mazonClient.retry {
 				ar, err := aar.New("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken)
 				if err == nil {
-					token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 10)) * time.Hour).Read()
+					token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 4)) * time.Hour).Read()
 				}
-				if token == "" {
+				if token == "" || mazonClient.retry {
 					// 重新获取 Token
 					if err = mazonClient.getAccessToken(ctx); err != nil {
 						return err
