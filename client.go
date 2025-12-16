@@ -36,11 +36,10 @@ const (
 )
 
 type Client struct {
-	config      *config.Config // 配置
-	httpClient  *resty.Client  // Resty Client
-	accessToken string         // AccessToken
-	retry       bool           // 是否重新发起请求，如果是重新发起的，需要重新获取 token
-	Services    services       // API Services
+	config     *config.Config // 配置
+	httpClient *resty.Client  // Resty Client
+	retry      bool           // 是否重新发起请求，如果是重新发起的，需要重新获取 token
+	Services   services       // API Services
 }
 
 func NewClient(ctx context.Context, cfg config.Config) *Client {
@@ -64,21 +63,18 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 		}).
 		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
-			token := mazonClient.accessToken
+			var token string
+			ar, err := aar.New("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken)
+			if err == nil {
+				token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 4)) * time.Hour).Read()
+			}
 			if token == "" || mazonClient.retry {
-				ar, err := aar.New("mazon.access.token.%s.%s", cfg.AppKey, cfg.AppToken)
-				if err == nil {
-					token, _ = ar.SetDuration(time.Duration(min(max(cfg.TokenDuration, 1), 4)) * time.Hour).Read()
+				// 重新获取 Token
+				if token, err = mazonClient.getAccessToken(); err != nil {
+					return err
 				}
-				if token == "" || mazonClient.retry {
-					// 重新获取 Token
-					if err = mazonClient.getAccessToken(ctx); err != nil {
-						return err
-					}
-					token = mazonClient.accessToken
-					if err = ar.Write([]byte(token)); err != nil {
-						logger.Println("[ Error ]", err)
-					}
+				if err = ar.Write([]byte(token)); err != nil {
+					logger.Println("[ Error ]", err)
 				}
 			}
 			client.SetHeader("Authorization", token)
@@ -149,11 +145,7 @@ type NormalResponse struct {
 }
 
 // accessToken 获取 Access Token 值
-func (c *Client) getAccessToken(ctx context.Context) (err error) {
-	if c.accessToken != "" {
-		return nil
-	}
-
+func (c *Client) getAccessToken() (string, error) {
 	result := struct {
 		NormalResponse
 		Result *entity.Token `json:"result"`
@@ -194,12 +186,9 @@ func (c *Client) getAccessToken(ctx context.Context) (err error) {
 		}
 	}
 	if err = recheckError(resp, result.NormalResponse, err); err != nil {
-		return
+		return "", nil
 	}
-	if result.Result != nil {
-		c.accessToken = result.Result.AccessToken
-	}
-	return
+	return result.Result.AccessToken, nil
 }
 
 // errorWrap 错误包装
