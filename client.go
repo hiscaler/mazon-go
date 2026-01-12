@@ -151,8 +151,7 @@ func (c *Client) getAccessToken() (string, error) {
 		Result *entity.Token `json:"result"`
 	}{}
 	httpClient := resty.New().
-		SetDebug(true).
-		EnableTrace().
+		SetDebug(c.config.Debug).
 		SetBaseURL(baseUrl).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
