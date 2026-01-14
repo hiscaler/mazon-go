@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestClient_GetAccessToken(t *testing.T) {
-	token, err := client.getAccessToken()
+	token, err := client.getAccessToken(ctx)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, token)
 }

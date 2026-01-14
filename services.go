@@ -1,7 +1,7 @@
 package mazon
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hiscaler/mazon-go/config"
@@ -9,7 +9,7 @@ import (
 
 type service struct {
 	config     *config.Config // Config
-	logger     *log.Logger    // Logger
+	logger     *slog.Logger   // Log
 	httpClient *resty.Client  // HTTP client
 }
 

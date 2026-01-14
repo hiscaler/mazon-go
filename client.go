@@ -6,11 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -39,17 +36,19 @@ type Client struct {
 	config     *config.Config // 配置
 	httpClient *resty.Client  // Resty Client
 	retry      bool           // 是否重新发起请求，如果是重新发起的，需要重新获取 token
-	Services   services       // API Services
+	logger     *logger
+	Services   services // API Services
 }
 
 func NewClient(ctx context.Context, cfg config.Config) *Client {
-	logger := log.New(os.Stdout, "[ Client ] ", log.LstdFlags|log.Llongfile)
+	l := createLogger()
 	mazonClient := &Client{
 		config: &cfg,
 	}
 	httpClient := resty.New().
 		SetDebug(cfg.Debug).
 		SetBaseURL(baseUrl).
+		SetLogger(l).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 			"Accept":       "application/json",
@@ -70,42 +69,31 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 			}
 			if token == "" || mazonClient.retry {
 				// 重新获取 Token
-				if token, err = mazonClient.getAccessToken(); err != nil {
+				msg := ""
+				if token == "" {
+					msg = "token is empty"
+				} else if mazonClient.retry {
+					msg = "token expired and retry"
+				}
+				l.l.InfoContext(ctx, "Get access token", "why", msg)
+				if token, err = mazonClient.getAccessToken(ctx); err != nil {
+					l.l.ErrorContext(ctx, "Get access token", "error", err)
 					return err
 				}
 				if err = ar.Write([]byte(token)); err != nil {
-					logger.Println("[ Error ]", err)
+					l.l.ErrorContext(ctx, "Write token to cache", "error", err)
 				}
 			}
 			client.SetHeader("Authorization", token)
 			return nil
 		}).
 		OnAfterResponse(func(client *resty.Client, response *resty.Response) error {
-			logger.Printf(`
-Header: %#v
-Raw Request: %#v
-Request: %#v
-Raw Response: %#v
-Response: %#v
-`,
-				response.Request.Header,
-				response.Request.RawRequest,
-				response.Request,
-				response.RawResponse,
-				response,
-			)
-			fmt.Printf(`
-Header: %#v
-Raw Request: %#v
-Request: %#v
-Raw Response: %#v
-Response: %#v
-`,
-				response.Request.Header,
-				response.Request.RawRequest,
-				response.Request,
-				response.RawResponse,
-				response,
+			l.l.InfoContext(ctx, "response",
+				"header", response.Request.Header,
+				"raw_request", response.Request.RawRequest,
+				"request", response.Request,
+				"raw_response", response.RawResponse,
+				"response", response,
 			)
 			return nil
 		}).
@@ -122,10 +110,11 @@ Response: %#v
 			return retry
 		})
 	mazonClient.httpClient = httpClient
+	mazonClient.logger = l
 
 	xService := service{
 		config:     &cfg,
-		logger:     logger,
+		logger:     l.l,
 		httpClient: mazonClient.httpClient,
 	}
 	mazonClient.Services = services{
@@ -145,7 +134,7 @@ type NormalResponse struct {
 }
 
 // accessToken 获取 Access Token 值
-func (c *Client) getAccessToken() (string, error) {
+func (c *Client) getAccessToken(ctx context.Context) (string, error) {
 	result := struct {
 		NormalResponse
 		Result *entity.Token `json:"result"`
@@ -173,14 +162,13 @@ func (c *Client) getAccessToken() (string, error) {
 		SetResult(&result).
 		Post("/getToken")
 	if err != nil {
-		slog.Info("getAccessToken", "err", err)
 		if resp != nil {
-			slog.Info("getAccessToken",
+			c.logger.l.InfoContext(ctx, "Get access token",
 				"header", resp.Header(),
 				"request", resp.Request,
-				"request body", resp.Request.Body,
+				"request_body", resp.Request.Body,
 				"response", resp,
-				"response body", string(resp.Body()),
+				"response_body", string(resp.Body()),
 			)
 		}
 	}
